@@ -1,0 +1,291 @@
+{
+  "name": "SEO Content writer agent _ automation",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -860,
+        -220
+      ],
+      "id": "ebba6843-0ce9-44fc-ad75-691b92a0f821",
+      "name": "When chat message received",
+      "webhookId": "d15f5b53-cde1-4ad1-8c59-0fb57e69fc61"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a web searcher agent. The user will provide you with a topic or headline for an SEO blog article. Your task is to search the web for reliable, factual information on this topic and summarize key points to provide helpful content. Be Concise and clear , focusing on details that would enhance the article's SEO value and informative quality. "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -660,
+        -260
+      ],
+      "id": "93637bd8-94ae-4f04-96eb-712b7f3ebf4d",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "gpt-3.5-turbo",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -680,
+        -60
+      ],
+      "id": "2225951f-6b34-4276-aba3-50fa2e912a97",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "aYCUH7vZG0psKc91",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        -540,
+        0
+      ],
+      "id": "782d2a91-bd6c-4a56-b4dd-933b00367d0c",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "zcp0uOq7KcpWMRxm",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an SEO content writer. You will receive a summary :  {{ $json.output }} with factual information on a topic. Your task is to craft a highly engaging, SEO-optimized blog  article that is informative, well - structured , and aimed at outranking competitors. Prioritize readability, integrate relevant keywords naturallly, and include actionable insights, examples or tips that add unique value to the reader. "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        -300,
+        -260
+      ],
+      "id": "fd58c1d0-0f95-46fa-9129-0c81547a1d5e",
+      "name": "SEO writer",
+      "credentials": {
+        "openAiApi": {
+          "id": "aYCUH7vZG0psKc91",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an Editor. You will receive a draft {{ $json.message.content }} of a blog article. Your task is to throughly check for grammar, punctuation, and readibility. Ensure that the text flows smoothy, is free from errors, and maintains adjustments to improve clarity, structure, and accessibility for a broad audience. "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        -300,
+        40
+      ],
+      "id": "b44696ec-b0e5-47a6-93c9-3046134f19f5",
+      "name": "Editor",
+      "credentials": {
+        "openAiApi": {
+          "id": "aYCUH7vZG0psKc91",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are formatter. You will receive a refined article draft : {{ $json.message.content }}. Your task is to format it for optimal readability and SEO impact. Use headings (H1, H2, H3) where appropriate, create short paragraphs, and add bullet points or numbered  lists for clarity. Ensure each section flows logically, and highlight important information for better reader engagement. Check that keywords are stratigically placed without disrupting the flow. "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        20,
+        -20
+      ],
+      "id": "7ce442a0-534c-4e8b-b67f-9c4494cbe230",
+      "name": "Formatter",
+      "credentials": {
+        "openAiApi": {
+          "id": "aYCUH7vZG0psKc91",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $json.message.content }}",
+        "name": "=Blog_post_ {{ $now }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1uvi_8lWBIHGpEipyrpH494K1vqJyuZLN",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        380,
+        -20
+      ],
+      "id": "cded7ca6-b3a4-4101-9af0-2572bc1affaa",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "3fUTuVZVhZaMMPRw",
+          "name": "Google Drive account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "SEO writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SEO writer": {
+      "main": [
+        [
+          {
+            "node": "Editor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Editor": {
+      "main": [
+        [
+          {
+            "node": "Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatter": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d66130af-8176-473d-84d2-ca4eb479d3ac",
+  "meta": {
+    "instanceId": "36c60e5a09bb5157ca12bfc0e386b31abdcd577cc74cab9d764c331bf7c72cd2"
+  },
+  "id": "6KlSgzIsJ5tQhzm2",
+  "tags": []
+}
