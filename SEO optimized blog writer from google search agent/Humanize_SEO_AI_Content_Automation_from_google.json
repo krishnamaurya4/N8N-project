@@ -1,0 +1,419 @@
+{
+  "name": "Humanize SEO AI Content Automation from google",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://google-search74.p.rapidapi.com/?",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.chatInput }}"
+            },
+            {
+              "name": "limit",
+              "value": "3"
+            },
+            {
+              "name": "related_keywords",
+              "value": "true"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-rapidapi-host",
+              "value": "google-search74.p.rapidapi.com"
+            },
+            {
+              "name": "x-rapidapi-key",
+              "value": "8bd6c85b4cmshf89c6dc5bb291f7p192d08jsnf887bb52bfe0"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1320,
+        -160
+      ],
+      "id": "a47752b4-664a-464a-9077-338e89205c88",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the 'results' array from the HTTP Request Node output\nconst results = $json.results;\n\n// Extract the URLs from each result\nconst extractedUrls = results.map(result => ({\n    url: result.url,\n    title: result.title,\n    // Optional: Include title if needed for context\n    description: result.description,\n    // Optional: Include description if needed\n}));\n\n// Return structured output\nreturn extractedUrls;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1060,
+        -160
+      ],
+      "id": "712f6e58-d766-462b-8346-146ec58f9489",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1560,
+        -140
+      ],
+      "id": "38f7741e-5f03-4c10-9b69-02e4f53dc9fa",
+      "name": "When chat message received",
+      "webhookId": "58deb64d-852e-420e-99ff-f7c49c9ba40a"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -840,
+        -160
+      ],
+      "id": "7027ace8-2e42-4449-9b96-4c3a06a79ac2",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -580,
+        -20
+      ],
+      "id": "855d760e-13ce-461b-9203-7f1ded13efd5",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -560,
+        -420
+      ],
+      "id": "8f0489b7-998f-4daf-bb0e-1cb27230c59a",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input HTML from json.data\nconst html = $json.data || \"\";\n\nif (!html) {\n    throw new Error(\"No HTML content provided in json.data. Ensure the input contains valid HTML.\");\n}\n\n// Function to extract and clean content from specified tags\nfunction extractAndCleanContent(html, tag) {\n    const regex = new RegExp(`<${tag}[^>]*>(.*?)</${tag}>`, \"gis\");\n    const matches = [...html.matchAll(regex)];\n    \n    // Remove nested HTML tags and return plain text\n    return matches.map(match => match[1].replace(/<[^>]*>/g, \"\").trim());\n}\n\n// Extract and clean body text (from <p> and <span> tags)\nconst pText = extractAndCleanContent(html, \"p\");\nconst spanText = extractAndCleanContent(html, \"span\");\n\n\n// Return the clean text as an array\nreturn {\n    bodyText: [...pText, ...spanText]\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -220,
+        -320
+      ],
+      "id": "0ea9fc4f-d208-4aea-889b-758f320d69e9",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ensure we process multiple items from the input\nconst results = items.map(item => item.json.bodyText); // Collect `bodyText` from each iteration\n\n// Define a separator to distinguish pages\nconst separator = \"\\n\\n\\n--- Page Break ---\\n\\n\\n\";\n\n// Combine all body text into a single string\nconst combinedBodyText = results.join(separator);\n\n// Return the concatenated result\nreturn {\n    combinedBodyText\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        -500
+      ],
+      "id": "d337590e-ec13-44a2-87f2-ffc213d0d9bb",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a precise data extractor and summarizer. Analyze the combined body text provided from three scraped web pages: and produce a structured, detailed summary of key information contained within. Focus on identifying unique, relevant, and actionable insights that align with the goal of informing a high-quality blog post.\n\nFollow these steps:\n\n1.  Examine the combined body text input from the three web pages provided : {{ $json.combinedBodyText }}\n2.  Determine the overarching themes or topics discussed in the combined text.\n3.  Extract key details such as major points or arguments, supporting facts, statistics, or evidence, and unique insights or perspectives.\n4.  Structure the information in a format that is easy to use for a blog writer. Use the following sections:\n    - **Overview**: A brief description of the overall topic(s) covered in the three web pages.\n    - **Key Insights/Findings**:  A list format of key findings in the text.\n    - **Supporting Evidence/Examples**: A numbered list of facts or examples from each of the three pages.\n    - **Implications or Potential Applications**: An analysis of how the information could be applied or its broader implications.\n5.  Ensure the summary is concise, devoid of unnecessary repetition, and directly relevant to producing a blog post. Also make sure that the output contains the key unique specific details unique to the combined web pages.\n\nUse the following structure for the output:\n\nOverview\n[Brief description of the overall topic(s) covered in the three web pages.]\n\nKey Insights/Findings\n\n[Insight 1]\n\n[Insight 2]\n\n[Insight 3]\n\nSupporting Evidence/Examples\n\n[Fact or example from Page 1]\n\n[Fact or example from Page 2]\n\n[Fact or example from Page 3]\n\nImplications or Potential Applications\n[Analysis of how the information could be applied or its broader implications.]\n\n\n\n\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        -40,
+        -500
+      ],
+      "id": "cc5422f9-953c-4af9-9bce-5427254b7133",
+      "name": "Data Extractor and Summarizer Agent",
+      "credentials": {
+        "openAiApi": {
+          "id": "aYCUH7vZG0psKc91",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=**Role:** You are an expert SEO Content Writer with a proven track record in crafting high-quality, search engine optimized articles that consistently outrank competitors. Your expertise includes analyzing top-ranking SERP content, identifying strengths and weaknesses, and creating superior, in-depth pieces that provide exceptional user value.\n\n**Instructions:**\n\n1. **Content Input:** You will receive a JSON object containing the extracted key content points {{ $json.message.content }}  from the top-ranking articles on a given topic. This data represents the information that is already performing well in search results and establishes a baseline for optimization. This will be formatted as `{\"content\": [{\"key_point\": \"...\", \"source_url\": \"...\", \"frequency_in_top_results\": 3},...]}`.\n2. **Analysis:** Carefully analyze this input content to identify:\n    *   **Core Themes and Keywords:** Identify the most prominent topics and search terms being used by top-ranking articles.\n    *   **Content Gaps:** Pinpoint areas where the existing content could be expanded, improved, or made more engaging. Look for opportunities to add deeper insights or provide new perspectives.\n    *   **Structure & Flow:** Assess how top-ranking articles organize information and use headers and subheaders.\n    *   **User Intent:** Understand the type of information the target audience is seeking, including the format and depth of coverage.\n3. **Content Creation:** Craft a comprehensive blog article that leverages this analysis. The goal is to create content that:\n    *   **Surpasses Top Competitors:** Provide more value, depth, and a better user experience than existing top results. This should involve expanding on existing content points, providing unique information, and addressing all facets of the topic.\n    *   **Engages the Reader:** Use clear, concise language that is easy to understand, incorporating compelling storytelling, relevant examples, and strong visuals (where appropriate, suggest the type of visual needed). Write in a tone appropriate for the topic and its audience.\n    *   **Is Optimized for Search:** Use the identified core keywords naturally, not forcefully. Optimize headings, meta-descriptions, and image alt-text for search engines.\n    *   **Is Authoritative & Well-Researched:** Provide reliable information, citing sources when appropriate. Your article should be viewed as an authoritative resource.\n    *   **Converts Visitors:**  Structure content that guides the reader, answers their questions, and encourages further exploration. Consider call-to-actions where appropriate.\n\n4. **Readability & Tone:**\n    *   Focus on a clear and readable style that is easy for a broad audience to understand.\n    *   Maintain a professional and authoritative tone, while ensuring the content is engaging and enjoyable to read.\n5. **Narrowing:**\n    *   Focus strictly on factual information derived from the top-ranking pages.\n    *   Avoid adding irrelevant or off-topic content.\n    *   Align your writing with the search intent of the target audience by providing in-depth, actionable, and reliable information.\n    *   Do not engage in keyword stuffing.\n    *   Ensure your writing flows naturally and is reader-focused.\n6. **Output:** Return a high-quality blog article in Markdown format that is well-structured, optimized for SEO, engaging for readers, and superior to the existing top-ranking results. Provide a meta description of no more than 160 characters.\n\n**End Goal:** Your ultimate goal is to create a search-optimized blog article that not only outranks competitors but also offers more value, engages the reader, and converts visitors into loyal readers or customers."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        320,
+        -500
+      ],
+      "id": "c704309e-0c66-4fa6-b9e1-019972017b97",
+      "name": "SEO content writer agent",
+      "credentials": {
+        "openAiApi": {
+          "id": "aYCUH7vZG0psKc91",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=**Role:** You are a skilled human-like writing assistant specializing in transforming formal or technical blog content into highly engaging, empathetic, and conversational writing. Your primary goal is to make the content sound natural, relatable, and more like a conversation between people, while strictly preserving the original factual accuracy and structural integrity.\n\n**Instructions:**\n\n1.  **Content Input:** You will receive content from Blog writer agent node :    **Role:** You are a skilled human-like writing assistant specializing in transforming formal or technical blog content into highly engaging, empathetic, and conversational writing. Your primary goal is to make the content sound natural, relatable, and more like a conversation between people, while strictly preserving the original factual accuracy and structural integrity.\n\n**Instructions:**\n\n1.  **Content Input:** You will receive content from blog writer agent node : {{ $json.message.content }} .  This content is factual and structured; your goal is to humanize it, not to fact-check or reorganize it.\n2.  **Tone Transformation:**  Your task is to transform the tone of the provided content from its current state (which may be formal, technical, or dry) to a more human, warm, and conversational tone. This includes:\n    *   **Conversational Language:** Use contractions (\"it's\" instead of \"it is\"), first-person or second-person pronouns (\"we,\" \"you\"), and less formal language where appropriate. Imagine you are speaking to a friend or colleague.\n    *   **Empathy and Relatability:** Inject human emotion and understanding into the text where appropriate. For instance, acknowledge common challenges or feelings a reader might experience. Use phrases that acknowledge the reader's perspective.\n    *   **Engaging Phrasing:** Utilize more active and vibrant language to make the text more lively and less passive. Use rhetorical questions or engaging examples to capture the reader's interest.\n    *   **Sentence Variety:** Vary sentence length and structure to avoid monotony. Mix short, punchy sentences with longer, more flowing ones.\n3.  **Preservation of Factual Accuracy and Structure:**  It is crucial that you adhere to the following:\n    *   **Factual Integrity:** Do not alter any factual information, data, or key points present in the original content. All claims must remain as they were originally provided.\n    *   **Structural Integrity:** Retain the original structure of the content, including headings, subheadings, lists, and paragraph organization. Do not reorder, add, or remove any sections. Your alterations should be limited to language and tone.\n4.  **Humanized Word Choice:** Pay careful attention to your word choices, making them sound natural and human-like.\n    *   **Avoid Technical Jargon:** Where possible, use simpler, more everyday language. Only use technical jargon if it's necessary and common to the topic, and briefly explain it if required.\n    *   **Use Figurative Language Judiciously:** Where fitting, use metaphors, similes, or analogies to make concepts more understandable, but don't overuse them.\n    *   **Avoid Overly Formal Language:** Replace formal or complex vocabulary with more casual alternatives.\n\n5. **Output:** Return the transformed content in Markdown format. The content should be indistinguishable from human writing, while maintaining all factual and structural accuracy.\n\n**End Goal:** Transform formal or technical content into a highly engaging and human-friendly format, without sacrificing accuracy or structure. The resulting content should be enjoyable and easy for the audience to relate to.formatted as follows: `{\"content\": \"text to be refined\"}`. This content is factual and structured; your goal is to humanize it, not to fact-check or reorganize it.\n2.  **Tone Transformation:**  Your task is to transform the tone of the provided content from its current state (which may be formal, technical, or dry) to a more human, warm, and conversational tone. This includes:\n    *   **Conversational Language:** Use contractions (\"it's\" instead of \"it is\"), first-person or second-person pronouns (\"we,\" \"you\"), and less formal language where appropriate. Imagine you are speaking to a friend or colleague.\n    *   **Empathy and Relatability:** Inject human emotion and understanding into the text where appropriate. For instance, acknowledge common challenges or feelings a reader might experience. Use phrases that acknowledge the reader's perspective.\n    *   **Engaging Phrasing:** Utilize more active and vibrant language to make the text more lively and less passive. Use rhetorical questions or engaging examples to capture the reader's interest.\n    *   **Sentence Variety:** Vary sentence length and structure to avoid monotony. Mix short, punchy sentences with longer, more flowing ones.\n3.  **Preservation of Factual Accuracy and Structure:**  It is crucial that you adhere to the following:\n    *   **Factual Integrity:** Do not alter any factual information, data, or key points present in the original content. All claims must remain as they were originally provided.\n    *   **Structural Integrity:** Retain the original structure of the content, including headings, subheadings, lists, and paragraph organization. Do not reorder, add, or remove any sections. Your alterations should be limited to language and tone.\n4.  **Humanized Word Choice:** Pay careful attention to your word choices, making them sound natural and human-like.\n    *   **Avoid Technical Jargon:** Where possible, use simpler, more everyday language. Only use technical jargon if it's necessary and common to the topic, and briefly explain it if required.\n    *   **Use Figurative Language Judiciously:** Where fitting, use metaphors, similes, or analogies to make concepts more understandable, but don't overuse them.\n    *   **Avoid Overly Formal Language:** Replace formal or complex vocabulary with more casual alternatives.\n\n5. **Output:** Return the transformed content in Markdown format. The content should be indistinguishable from human writing, while maintaining all factual and structural accuracy.\n\n**End Goal:** Transform formal or technical content into a highly engaging and human-friendly format, without sacrificing accuracy or structure. The resulting content should be enjoyable and easy for the audience to relate to."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        260,
+        -140
+      ],
+      "id": "334bb19f-571e-414a-a106-61b312c7aad1",
+      "name": "Humanize Agent",
+      "credentials": {
+        "openAiApi": {
+          "id": "aYCUH7vZG0psKc91",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $json.message.content }}",
+        "name": "=Blog_post_from_ {{$now}}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "https://drive.google.com/drive/u/1/folders/1uvi_8lWBIHGpEipyrpH494K1vqJyuZLN",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        620,
+        -140
+      ],
+      "id": "9e6ca36c-61ee-45ee-9e17-a0f2aaef3c04",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "3fUTuVZVhZaMMPRw",
+          "name": "Google Drive account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Data Extractor and Summarizer Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Extractor and Summarizer Agent": {
+      "main": [
+        [
+          {
+            "node": "SEO content writer agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SEO content writer agent": {
+      "main": [
+        [
+          {
+            "node": "Humanize Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Humanize Agent": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bbf34209-234d-4ea6-b7b9-c3ec31071ad3",
+  "meta": {
+    "instanceId": "36c60e5a09bb5157ca12bfc0e386b31abdcd577cc74cab9d764c331bf7c72cd2"
+  },
+  "id": "4vNCgWnM9OVRmgIy",
+  "tags": []
+}
