@@ -29,16 +29,22 @@ Before setting up the project, ensure you have:
   - OpenAI
   - Pinecone
   - Google Drive API
+
+
 Implementation Details
 1️. Employee Requests a Document → Employees send a query in Slack, like:
 "Where is the latest Leave Policy?"
+
 2️⃣ N8N Workflow Triggered → The Slack bot triggers an N8N workflow.
+
 3️⃣ AI-Powered Query Processing (ChatGPT & Pinecone) →
 •	OpenAI interprets the question using natural language processing.
 •	Pinecone performs a vector search to find the most relevant document.
+
 4️⃣ Google Drive API Fetches Document →
 •	The bot retrieves the correct document from Google Drive.
 •	It extracts key details like summaries or highlights.
+
 5️⃣ Response Sent in Slack →
 •	The bot replies with the document link and a brief summary.
 •	If needed, AI-generated explanations are provided.
