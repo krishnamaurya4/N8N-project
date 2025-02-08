@@ -1,0 +1,325 @@
+{
+  "name": "Customer feedback agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -860,
+        -160
+      ],
+      "id": "44d7060c-5698-4eb3-9be7-5bee3caaaf5a",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/14Ii_EtZt_yI326lbeAmT6k41CLpItEm8LshKDTY19RQ/edit?resourcekey=&gid=1557319550#gid=1557319550",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/14Ii_EtZt_yI326lbeAmT6k41CLpItEm8LshKDTY19RQ/edit?resourcekey=&gid=1557319550#gid=1557319550",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -680,
+        -160
+      ],
+      "id": "189a949c-a7c4-48b2-b30b-d1963ed26087",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ihaWc8mIhSD9WTWO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "keep": "lastItems"
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        -140
+      ],
+      "id": "fb00d6d5-081d-4407-98c1-a4a7d64fbecc",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json[\"Feedback Category\"] }}{{ $json[\"Your Suggestion\"] }}{{ $json['Your Name'] }}{{ $json['Your Email'] }}",
+        "options": {
+          "categories": "Positive, Neutral, Negative"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.sentimentAnalysis",
+      "typeVersion": 1,
+      "position": [
+        -280,
+        -140
+      ],
+      "id": "c6935df3-8a2f-4282-bfbc-59f2c515ccf5",
+      "name": "Sentiment Analysis"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        80
+      ],
+      "id": "47e557c1-43bc-44a1-978c-2411c2ff2afc",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "0UuRRwHwhPiyso58",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an AI assistant tasked with crafting professional, empathetic, and personalized email responses to customer feedback. Your goal is to generate an email that aligns with the sentiment of the feedback (Positive, Neutral, or Negative) and addresses the customer appropriately.\n\n**Details:**\n\n*   **Feedback: {{ $json['Your Feedback'] }}\n    ** feedback type: {{ $json['Feedback Category'] }}\n*   **Feedback Sentiment:{{ $json.sentimentAnalysis.category }}\n(This will be 'Positive', 'Neutral', or 'Negative')\n*   **Customer Email: {{ $json['Your Email'] }}\n*   **Customer Name: {{ $json['Your Name'] }}\n\n**Instructions and Steps:**\n\n1.  **Salutation:** Start the email by addressing the customer by their name, using a friendly tone (e.g., \"Dear [Customer Name],\" or \"Hello [Customer Name],\").\n\n2.  **Acknowledge and Thank:** Express gratitude to the customer for taking the time to share their feedback.\n\n3.  **Tailor Response to Sentiment:** Based on the 'Feedback Sentiment', apply the following:\n\n    *   **Positive Feedback:**\n        *   Express sincere gratitude for the positive feedback.\n        *   Reiterate your commitment to providing excellent service.\n        *   Reinforce the positive relationship with the customer.\n    *   **Neutral Feedback:**\n        *   Acknowledge the feedback and express appreciation for their time.\n        *   If applicable, indicate that you are always looking for ways to improve.\n    *   **Negative Feedback:**\n        *   Express sincere apologies for the negative experience described by the customer.\n        *   Acknowledge that the issue will be investigated (if the feedback suggests a specific problem).\n        *   Offer next steps, such as a follow up from your team, or explain what you will be doing to address their concerns.\n\n4.  **Closing:** End the email with a warm and professional closing (e.g., \"Sincerely,\", \"Best regards,\", \"Thank you,\" etc.)\n\n5.  **Clarity:** Ensure the email is clear, concise, and easy for the customer to understand.\n\n6. **Solution:** If a solution can be identified based on the feedback provide it or propose next steps to resolve the concern.\n\n7.  **Tone:** Maintain a warm, professional, and customer-friendly tone throughout the email.\n\n**Output:**\n\nGenerate the complete email response. Do not include any introductory text.\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        220,
+        -260
+      ],
+      "id": "c8e25cf2-2e6e-4478-b61d-b98d9acce2e7",
+      "name": "Thank you email content",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "aYCUH7vZG0psKc91",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an AI assistant tasked with generating professional and concise email to notify to marketing team about customer feedback. Based on the details provided, draft an email that summarize the feedback. Includes its sentiment analysis, customer feedback, The goal is to highlight key insights from the feedback that may require marketing's attention or action.\n\nSummarize the feedback and include any suggestions for improvement. \nEncourage the marketing team to review the feedback and take necesory actions based on the sentiment. \n\n**Details of Customer feedback:**\n\n*   **Feedback:** {{ $json['Your Feedback'] }}\n*   **Feedback Sentiment: {{ $json.sentimentAnalysis.category }}\n\n*   **Feedback Category:**{{ $json['Feedback Category'] }}  (e.g., 'Product Feature', 'Website UX', 'Customer Service', 'Marketing Campaign', etc.)\n*   **Customer Email (Optional):** {{ $json['Your Email'] }}\n*   **Customer Name (Optional):** {{ $json['Your Name'] }}\n\n\n**Instructions and Steps:**\n\n1.  **Analyze Feedback:** Analyze the 'Feedback' for key themes, specific product mentions, user experience concerns, or other relevant points.\n2.  **Identify Actionable Insights:** Determine if the feedback has implications for marketing strategies, campaigns, website content, or branding.\n3.  **Craft Notification Summary:**\n    *   Start with a brief subject line that summarizes the feedback sentiment and category (e.g., \"Negative Feedback: Website UX Issue\", \"Positive Feedback: Product Feature\", etc.)\n    *   Create a concise summary of the key points from the feedback (e.g., \"Customer reported difficulty navigating the checkout process.\", \"Customer praised the new onboarding videos.\").\n    *   If the sentiment is negative, highlight the specific issue in a clear way.\n    *   If the sentiment is positive, specify which features or elements were liked by the customer.\n    *   Mention the 'Feedback Category' to guide the marketing team toward the relevant area.\n4.  **Include Context:**\n    * If 'customer_email' and 'customer_name' are available include it for the marketing team to contact them.\n    * If `response` was generated also include that.\n5.  **Call to Action (If applicable):** If the feedback requires specific action from the marketing team, state what is needed (e.g., \"Please review the checkout process.\" or \"Consider incorporating the positive feedback in future campaigns.\").\n6.  **Output Format:** Structure the notification in a way that is easily readable and digestible for the marketing team. The notification should be in text format.\n\ngenerate a professional and informative email to notify the marketing team. \n"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        220,
+        20
+      ],
+      "id": "6d58c6e5-3247-460f-a790-e5db521759cb",
+      "name": "Marketing team notification",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "aYCUH7vZG0psKc91",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Sentiment Analysis').item.json['Your Email'] }}",
+        "subject": "Thank you for providing the feedback",
+        "message": "={{ $json.message.content }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        640,
+        -260
+      ],
+      "id": "ac3f1776-b0bb-47fa-b751-62eaeafe3d40",
+      "name": "Thank you email to customer",
+      "webhookId": "42c5ec77-b57a-4d38-a218-7b4ff25d5617",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "3wqIkvMXhhxx9H4n",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=krishdigital22@gmail.com",
+        "subject": "={{ $json.message.content.email.subject }}",
+        "message": "={{ $json.message.content.email.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        620,
+        20
+      ],
+      "id": "372d9a93-6911-4ff7-bbcc-a4854ab7b350",
+      "name": "notify to marketing team",
+      "webhookId": "42c5ec77-b57a-4d38-a218-7b4ff25d5617",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "3wqIkvMXhhxx9H4n",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Sentiment Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sentiment Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sentiment Analysis": {
+      "main": [
+        [
+          {
+            "node": "Thank you email content",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Marketing team notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Thank you email content",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Marketing team notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Thank you email content",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Marketing team notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thank you email content": {
+      "main": [
+        [
+          {
+            "node": "Thank you email to customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marketing team notification": {
+      "main": [
+        [
+          {
+            "node": "notify to marketing team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "32784e1e-2ea4-4917-b9ee-190d0c5ca5d9",
+  "meta": {
+    "instanceId": "36c60e5a09bb5157ca12bfc0e386b31abdcd577cc74cab9d764c331bf7c72cd2"
+  },
+  "id": "nveFU3ruYhBgUvni",
+  "tags": []
+}
