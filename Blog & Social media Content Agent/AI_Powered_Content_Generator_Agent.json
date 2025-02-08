@@ -1,0 +1,878 @@
+{
+  "name": "AI Powered Content Generator Agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2020,
+        -360
+      ],
+      "id": "23d83624-5f7b-4610-8874-48673802f090",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/10gkha65EFHFDkSBhdlMdRxk8w-WG0AVW0TnooIcpkxo/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/10gkha65EFHFDkSBhdlMdRxk8w-WG0AVW0TnooIcpkxo/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -1800,
+        -360
+      ],
+      "id": "e7119f26-9acb-40bf-a576-61f658093674",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ihaWc8mIhSD9WTWO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -1580,
+        -360
+      ],
+      "id": "dddbdb24-8aa8-4b8b-8d9c-62e51d9ab8e2",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bba61d73-63d4-4b16-b72a-d487b7e3f609",
+              "name": "Campaign",
+              "value": "={{ $json.Campaign }}",
+              "type": "string"
+            },
+            {
+              "id": "0d023ee3-d011-4ae0-8e23-7a39ba1ae879",
+              "name": "Content Subject",
+              "value": "={{ $json['Content Subject'] }}",
+              "type": "string"
+            },
+            {
+              "id": "de31f989-2baa-4eb5-bead-d168c7c166f3",
+              "name": "Target Audience",
+              "value": "={{ $json['Target Audience'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1360,
+        -360
+      ],
+      "id": "d432ca1f-44c6-4a09-977a-506527295b3b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"api_key\": \"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\",\n  \"query\": \"{{ $json['Content Subject'].replace(/\\\"/g, '\\\\\\\"') }}\",\n  \"search_depth\": \"basic\",\n  \"include_answer\": true,\n  \"topic\": \"news\",\n  \"include_raw_content\": true,\n  \"max_results\": 3\n}",
+        "options": {
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1140,
+        -360
+      ],
+      "id": "97173c41-3355-4f26-9a8b-82089dd9d790",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -920,
+        -360
+      ],
+      "id": "ef2292fe-63bd-4fed-998a-068416276a81",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "include": "specifiedFields",
+        "fieldsToInclude": "title, raw_content",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -700,
+        -360
+      ],
+      "id": "73e4c43c-b377-4171-9630-f6db232da594",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "agent": "conversationalAgent",
+        "promptType": "define",
+        "text": "=You are a web Searcher Agent. The user will provide you with atopic or headline for an SEO blog article. \n\n{{ $('Google Sheets').item.json.Campaign }}\n\nYour task is to search the web for reliable, factual information on this topic and summarize key points to provide helpful content. Be concise and clear, focusing on details that would enhance the article's SEO value and informative quality. ",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -2120,
+        -40
+      ],
+      "id": "1b99d454-9ded-4118-8b62-34f6211090b2",
+      "name": "Web Researcher Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -2180,
+        220
+      ],
+      "id": "919bae18-fb0e-427d-a4d5-7c27afd0a814",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "0UuRRwHwhPiyso58",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        -2000,
+        200
+      ],
+      "id": "bc015cee-8992-4194-a4cf-afa3fc70b84b",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "zcp0uOq7KcpWMRxm",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        -1640,
+        240
+      ],
+      "id": "4fc2dc7d-aeb3-44aa-bc5e-b1e41a0330a8",
+      "name": "SerpAPI1",
+      "credentials": {
+        "serpApi": {
+          "id": "zcp0uOq7KcpWMRxm",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Article Content   \n\n{{ $('Aggregate').item.json.data.toJsonString() }}                      \n\ntarget Audience    \n\n{{ $('Edit Fields').item.json['Target Audience'] }}",
+        "options": {
+          "systemMessage": "You are a linkedin Content creator specializing in transforming articles into concise, highly engaging posts tailored to a specific target audience. Your goal is to craft minimalistic, user friendly post that grab attention, spark interest and encourage engagement. Use clear and professional language, incorporate relevant keywords or hastags, and ensure the tone aligns with the intended audience. each post should include a compelling opening line concise insights, and a clear call- to- actions where applicable. Avoid jargon, and focus on delivering value in a format that is easy to read and share. \n\nIf you not found any relevant article try searching using SERP api from the google "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -1740,
+        -40
+      ],
+      "id": "a4cf404c-fab8-49ec-98cb-5e1e7d62c98e",
+      "name": "Linkedin Writer Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Article Content\n\n{{ $('Aggregate').item.json.data.toJsonString() }}\n\nTarget Audience\n\n{{ $('Edit Fields').item.json['Target Audience'] }}",
+        "options": {
+          "systemMessage": "=You are a twitter content  creator specializing in transforming articles into concise, highly engaging posts tailored to a specific target audience. Your goal is to craft minimalistic, user friendly post that grab attention, spark interest and encourage engagement. Use clear and professional language, incorporate relevant keywords or hastags, and ensure the tone aligns with the intended audience. each post should include a compelling opening line concise insights, and a clear call- to- actions where applicable. Avoid jargon, and focus on creating content that resonate instantly. \n\nIf you not found any relevant article try searching using SERP api from the google "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -1340,
+        -60
+      ],
+      "id": "426a5071-675d-48de-9fe4-84ca05d07bc8",
+      "name": "Twitter post agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1340,
+        160
+      ],
+      "id": "c1cf8cfc-d4d0-4312-b585-281ba040b6dd",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "RF3RFoEhiCMi4aIf",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1760,
+        200
+      ],
+      "id": "741c7c88-0559-4ca8-bfbf-f11019a21230",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "RF3RFoEhiCMi4aIf",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        -1180,
+        200
+      ],
+      "id": "1bb3c8a0-a60f-4679-b634-1c420feb1cdb",
+      "name": "SerpAPI2",
+      "credentials": {
+        "serpApi": {
+          "id": "zcp0uOq7KcpWMRxm",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -940,
+        160
+      ],
+      "id": "c0dddeec-8b2d-402f-9f36-76d04a422f74",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "RF3RFoEhiCMi4aIf",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        -800,
+        160
+      ],
+      "id": "19ce4497-a7b5-4594-a60e-063bdc4d514d",
+      "name": "SerpAPI3",
+      "credentials": {
+        "serpApi": {
+          "id": "zcp0uOq7KcpWMRxm",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Article Content\n\n{{ $('Aggregate').item.json.data.toJsonString() }}\n\nTarget Audience\n\n{{ $('Edit Fields').item.json['Target Audience'] }}",
+        "options": {
+          "systemMessage": "You are a skilled and creative blog writer capable of crafting engaging, concise and well -structured two - paragraph blog article tailored to a specific target audience. Your goal is to transform provided content into compelling blogs that are informative , easy to read, and impactful.  Use clear and professional language, incorporate relevant keywords and ensure the tone aligns with the intended audience. each blog should include a captivating introduction, key insights, and a strong conclusion or call - to -action.   Avoid jargon, and focus on delivering value which maintaining a flow that keeps readers engaged from start to finish. \n\nIf you not found any relevant article try searching using SERP api from the google "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -980,
+        -60
+      ],
+      "id": "95d500c2-d7b4-45b4-a78a-57dc8a28a8a9",
+      "name": "Blog writer agent"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=  You are an SEO Content Writer. You will receive a summary \n{{ $('Web Researcher Agent').item.json.output }} with factual information on a topic. Your task is to craft a highly engaging, SEO-- optimised blog article that is informative, well structured and aimed at outranking competitors. Prioritize readability, integrate relevant keywords naturally, and include actionable insights, example or tips that add unique value to the reader. "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        -600,
+        -20
+      ],
+      "id": "b4a54d4b-0be9-4168-98a6-702aa76c1647",
+      "name": "Content writer ",
+      "credentials": {
+        "openAiApi": {
+          "id": "aYCUH7vZG0psKc91",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=  You are a Editor. You will receive a refined article draft {{ $json.message.content }} of a blog article .Your task is to throughly check grammar, punctuation, and readability. ensure that the text flows smoothly, is free from errors, and maintains a clear engaging tone. Make any necessory adjustments to improve clarity, structure, and accessibilty for a braod audience. "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        -200,
+        -20
+      ],
+      "id": "da50de02-c4ad-4dc7-a775-c1776238ea9a",
+      "name": "Content Editor",
+      "credentials": {
+        "openAiApi": {
+          "id": "aYCUH7vZG0psKc91",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=  You are a formatter. You will receive a refined article draft  {{ $json.message.content }}. your task is to format it for optimal readibility and SEO impact. Use headings (H1, H2, H3) where appropriate, create short paragraphs, and add bullet points or numbered lists for clarity. Ensure each section flows logically, check that keywords are startegically placed without disrupting the flow."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        200,
+        -20
+      ],
+      "id": "38992d8e-6fc4-4834-86b5-6a53a943895e",
+      "name": "Content Formatter",
+      "credentials": {
+        "openAiApi": {
+          "id": "aYCUH7vZG0psKc91",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "content": "={{ $json.message.content }}",
+        "name": "=post_ {{  $now}}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        560,
+        -20
+      ],
+      "id": "d2f1aeb8-18a8-410b-aa98-baa78f887378",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "3fUTuVZVhZaMMPRw",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/10gkha65EFHFDkSBhdlMdRxk8w-WG0AVW0TnooIcpkxo/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/10gkha65EFHFDkSBhdlMdRxk8w-WG0AVW0TnooIcpkxo/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Campaign": "={{ $('Google Sheets').item.json.Campaign }}",
+            "Linkedin": "={{ $('Linkedin Writer Agent').item.json.output }}",
+            "Twitter": "={{ $('Twitter post agent').item.json.output }}",
+            "Blog": "={{ $('Blog writer agent').item.json.output }}"
+          },
+          "matchingColumns": [
+            "Campaign"
+          ],
+          "schema": [
+            {
+              "id": "Campaign",
+              "displayName": "Campaign",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Content Subject",
+              "displayName": "Content Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Target Audience",
+              "displayName": "Target Audience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Linkedin",
+              "displayName": "Linkedin",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Twitter",
+              "displayName": "Twitter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Blog",
+              "displayName": "Blog",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        780,
+        -20
+      ],
+      "id": "5630dead-c887-4cda-b883-478c0c2aaeaf",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ihaWc8mIhSD9WTWO",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Web Researcher Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Web Researcher Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "Web Researcher Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Web Researcher Agent": {
+      "main": [
+        [
+          {
+            "node": "Linkedin Writer Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Linkedin Writer Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Linkedin Writer Agent": {
+      "main": [
+        [
+          {
+            "node": "Twitter post agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Twitter post agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Linkedin Writer Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI2": {
+      "ai_tool": [
+        [
+          {
+            "node": "Twitter post agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Twitter post agent": {
+      "main": [
+        [
+          {
+            "node": "Blog writer agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Blog writer agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI3": {
+      "ai_tool": [
+        [
+          {
+            "node": "Blog writer agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Blog writer agent": {
+      "main": [
+        [
+          {
+            "node": "Content writer ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content writer ": {
+      "main": [
+        [
+          {
+            "node": "Content Editor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Editor": {
+      "main": [
+        [
+          {
+            "node": "Content Formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Formatter": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "594e757a-3ae5-4b8e-9df6-4d2603aa8688",
+  "meta": {
+    "instanceId": "36c60e5a09bb5157ca12bfc0e386b31abdcd577cc74cab9d764c331bf7c72cd2"
+  },
+  "id": "C5C7GijIumYIRr5n",
+  "tags": []
+}
